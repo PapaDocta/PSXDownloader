@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace PSXDLL
 {
@@ -93,91 +94,57 @@ namespace PSXDLL
             _destroyer?.Invoke(this);
         }
 
-        public void OnClientReceive(IAsyncResult ar)
+        private static async Task RelayAsync(Socket source, Socket destination, byte[] buffer)
         {
-            try
+            while (true)
             {
-                if (ClientSocket == null)
+                int size;
+                try
                 {
-                    return;
+                    size = await source.ReceiveAsync(buffer, SocketFlags.None);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "RelayReceive");
+                    break;
                 }
 
-                int size = ClientSocket.EndReceive(ar);
-                if (size > 0 && DestinationSocket != null)
+                if (size <= 0)
                 {
-                    DestinationSocket.BeginSend(Buffer, 0, size, SocketFlags.None, OnRemoteSent, DestinationSocket);
+                    break;
                 }
-            }
-            catch
-            {
-                Dispose();
+
+                try
+                {
+                    await destination.SendAsync(buffer.AsMemory(0, size), SocketFlags.None);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "RelaySend");
+                    break;
+                }
             }
         }
 
-        public void OnClientSent(IAsyncResult ar)
+        public async Task StartRelayAsync()
         {
-            try
-            {
-                if (ClientSocket != null && ClientSocket.EndSend(ar) > 0)
-                {
-                    DestinationSocket?.BeginReceive(RemoteBuffer, 0, RemoteBuffer.Length, SocketFlags.None,
-                                                   OnRemoteReceive, DestinationSocket);
-                }
-            }
-            catch
+            if (ClientSocket == null || DestinationSocket == null)
             {
                 Dispose();
+                return;
             }
-        }
 
-        public void OnRemoteReceive(IAsyncResult ar)
-        {
-            try
-            {
-                if (DestinationSocket != null)
-                {
-                    int size = DestinationSocket.EndReceive(ar);
-                    if (size > 0 && ClientSocket != null)
-                    {
-                        ClientSocket.BeginSend(RemoteBuffer, 0, size, SocketFlags.None, OnClientSent, ClientSocket);
-                    }
-                }
-            }
-            catch
-            {
-                Dispose();
-            }
-        }
-
-        public void OnRemoteSent(IAsyncResult ar)
-        {
-            try
-            {
-                if (DestinationSocket?.EndSend(ar) > 0 && ClientSocket != null)
-                {
-                    ClientSocket.BeginReceive(Buffer, 0, Buffer.Length, SocketFlags.None, OnClientReceive, ClientSocket);
-                }
-            }
-            catch { Dispose(); }
+            Task t1 = RelayAsync(ClientSocket, DestinationSocket, Buffer);
+            Task t2 = RelayAsync(DestinationSocket, ClientSocket, RemoteBuffer);
+            await Task.WhenAny(t1, t2);
+            Dispose();
         }
 
         public abstract void StartHandshake();
 
         public void StartRelay()
         {
-            try
-            {
-                if (ClientSocket != null)
-                {
-                    ClientSocket.BeginReceive(Buffer, 0, Buffer.Length, SocketFlags.None, OnClientReceive, ClientSocket);
-                    DestinationSocket?.BeginReceive(RemoteBuffer, 0, RemoteBuffer.Length, SocketFlags.None, OnRemoteReceive,
-                                                   DestinationSocket);
-                }
-            }
-            catch
-            {
-                Dispose();
-            }
+            _ = StartRelayAsync();
         }
 
         public override string ToString()

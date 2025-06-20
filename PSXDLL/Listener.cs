@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace PSXDLL
 {
@@ -179,7 +180,7 @@ namespace PSXDLL
                      (!ip.Equals(IPAddress.Any) && !ip.Equals(IPAddress.Loopback)) && !ip.Equals(IPAddress.Broadcast);
         }
 
-        public abstract void OnAccept(IAsyncResult ar);
+        public abstract void OnAccept(Socket clientSocket);
 
         public void RemoveClient(Client client)
         {
@@ -209,12 +210,29 @@ namespace PSXDLL
                 ListenSocket = new Socket(Address!.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 ListenSocket.Bind(new IPEndPoint(Address, Port));
                 ListenSocket.Listen(50);
-                ListenSocket.BeginAccept(OnAccept, ListenSocket);
+                _ = AcceptLoopAsync();
             }
             catch
             {
                 ListenSocket = null;
                 throw new SocketException();
+            }
+        }
+
+        private async Task AcceptLoopAsync()
+        {
+            while (!IsDisposed)
+            {
+                try
+                {
+                    Socket client = await ListenSocket!.AcceptAsync();
+                    OnAccept(client);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "AcceptLoop");
+                    Dispose();
+                }
             }
         }
 
