@@ -6,8 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using System.Windows;
-using WinForm = System.Windows.Forms;
+using Avalonia.Controls;
 
 namespace PSXDownloader.MVVM.Data
 {
@@ -104,25 +103,15 @@ namespace PSXDownloader.MVVM.Data
 
         }
 
-        public string? LocalFilePath()
+        public async Task<string?> LocalFilePathAsync(Window parent)
         {
-            string? path = null;
-            WinForm.FolderBrowserDialog fbd = new();
-            if (fbd.ShowDialog() == WinForm.DialogResult.OK)
-            {
-                path = fbd.SelectedPath;
-            }
-            return path;
+            var dialog = new OpenFolderDialog();
+            return await dialog.ShowAsync(parent);
         }
 
-        public async Task<PSXDatabase?> SingleAdd()
+        public async Task<PSXDatabase?> SingleAddAsync(Window parent)
         {
-            string? path = null;
-            WinForm.FolderBrowserDialog fbd = new();
-            if (fbd.ShowDialog() == WinForm.DialogResult.OK)
-            {
-                path = fbd.SelectedPath;
-            }
+            string? path = await LocalFilePathAsync(parent);
 
             if (!string.IsNullOrEmpty(path))
             {
@@ -170,28 +159,28 @@ namespace PSXDownloader.MVVM.Data
                 string backup = $"Backup\\{time}.json";
                 using StreamWriter sw = new(backup);
                 sw.WriteLine(json);
-                MessageBox.Show("Done");
             }
             catch
             {
-                MessageBox.Show("Faild");
             }
         }
 
-        public async Task Restore()
+        public async Task RestoreAsync(Window parent)
         {
             if (!Directory.Exists("Backup"))
             {
                 Directory.CreateDirectory("Backup");
             }
-            WinForm.OpenFileDialog ofd = new()
+            string? json = null;
+            var dialog = new OpenFileDialog
             {
-                Filter = "Json files (*.*)|*.json",
-                InitialDirectory = "Backup\\Game",
+                Filters = new List<FileDialogFilter>{ new FileDialogFilter { Name = "Json", Extensions = {"json"} } },
+                InitialFileName = "Backup"
             };
-            if (ofd.ShowDialog() == WinForm.DialogResult.OK)
+            var result = await dialog.ShowAsync(parent);
+            if (result != null && result.Length > 0)
             {
-                string? json = File.ReadAllText(ofd.FileName);
+                json = File.ReadAllText(result[0]);
                 try
                 {
                     List<PSXDatabase>? entities = JsonSerializer.Deserialize<List<PSXDatabase>>(json);
@@ -202,11 +191,9 @@ namespace PSXDownloader.MVVM.Data
                             await Create(entity);
                         }
                     }
-                    MessageBox.Show("Done");
                 }
                 catch (Exception)
                 {
-                    MessageBox.Show("Faild");
                 }
             }
         }

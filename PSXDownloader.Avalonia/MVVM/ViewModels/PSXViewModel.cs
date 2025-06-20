@@ -3,7 +3,7 @@ using PSXDownloader.MVVM.Data;
 using PSXDownloader.MVVM.Models;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Windows;
+using Avalonia.Controls;
 using System.Windows.Input;
 
 namespace PSXDownloader.MVVM.ViewModels
@@ -77,12 +77,8 @@ namespace PSXDownloader.MVVM.ViewModels
 
         private async void EditGameCommand(object? obj)
         {
-            MessageBoxResult result = MessageBox.Show("Are You Sure?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.Yes);
-            if (result == MessageBoxResult.Yes)
-            {
-                await _repository.Update(Game!);
-                OnPropertyChanged(nameof(GameList));
-            }
+            await _repository.Update(Game!);
+            OnPropertyChanged(nameof(GameList));
             Game = new();
         }
 
@@ -102,12 +98,8 @@ namespace PSXDownloader.MVVM.ViewModels
 
         private async void DeleteGameCommand(object? obj)
         {
-            MessageBoxResult result = MessageBox.Show("Are You Sure?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.Yes);
-            if (result == MessageBoxResult.Yes)
-            {
-                await _repository.Delete(Game!);
-                OnPropertyChanged(nameof(GameList));
-            }
+            await _repository.Delete(Game!);
+            OnPropertyChanged(nameof(GameList));
             Game = new();
         }
 
@@ -122,11 +114,14 @@ namespace PSXDownloader.MVVM.ViewModels
 
         private async void BulkGameCommand(object? obj)
         {
-            string? path = _repository.LocalFilePath();
-            if (Directory.Exists(path))
+            if (obj is Window parent)
             {
-                await _repository.BulkAdd(path);
-                OnPropertyChanged(nameof(GameList));
+                string? path = await _repository.LocalFilePathAsync(parent);
+                if (path != null && Directory.Exists(path))
+                {
+                    await _repository.BulkAdd(path);
+                    OnPropertyChanged(nameof(GameList));
+                }
             }
         }
 
@@ -141,8 +136,11 @@ namespace PSXDownloader.MVVM.ViewModels
 
         private async void LocalDirectoryCommand(object? obj)
         {
-            Game = await _repository.SingleAdd();
-            OnPropertyChanged(nameof(Game));
+            if (obj is Window parent)
+            {
+                Game = await _repository.SingleAddAsync(parent);
+                OnPropertyChanged(nameof(Game));
+            }
         }
 
         public ICommand? Backup
@@ -170,7 +168,10 @@ namespace PSXDownloader.MVVM.ViewModels
 
         private async void RestoreCommand(object? obj)
         {
-            await _repository.Restore();
+            if (obj is Window parent)
+            {
+                await _repository.RestoreAsync(parent);
+            }
         }
     }
 }

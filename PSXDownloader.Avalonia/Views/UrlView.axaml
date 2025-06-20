@@ -1,0 +1,14 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="PSXDownloader.Avalonia.Views.UrlView">
+    <StackPanel Orientation="Vertical" Spacing="5">
+        <StackPanel Orientation="Horizontal" Spacing="5">
+            <Button Content="Copy" Command="{Binding Copy, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+            <TextBox Text="{Binding Url, RelativeSource={RelativeSource AncestorType=UserControl}}" Width="300"/>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="5">
+            <Button Content="Download" Command="{Binding Download, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+            <TextBox Text="{Binding FilePath, RelativeSource={RelativeSource AncestorType=UserControl}}" Width="300"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

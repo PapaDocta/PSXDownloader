@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:PSXDownloader.MVVM.ViewModels;assembly=PSXDownloader.Avalonia"
+             x:Class="PSXDownloader.Avalonia.Views.PSXView">
+    <UserControl.DataContext>
+        <vm:PSXViewModel/>
+    </UserControl.DataContext>
+    <StackPanel Margin="10" Spacing="5">
+        <StackPanel Orientation="Horizontal" Spacing="5">
+            <TextBox Width="50" Text="{Binding Game.ID}" IsReadOnly="True"/>
+            <TextBox Width="150" Text="{Binding Game.Title}"/>
+            <TextBox Width="150" Text="{Binding Game.TitleID}"/>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="5">
+            <Button Content="Browse" Command="{Binding LocalDirectory}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"/>
+            <TextBox Width="250" Text="{Binding Game.LocalPath}"/>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="5">
+            <Button Content="Add" Command="{Binding AddGame}"/>
+            <Button Content="Edit" Command="{Binding EditGame}"/>
+            <Button Content="Delete" Command="{Binding DeleteGame}"/>
+            <Button Content="Bulk" Command="{Binding BulkGame}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"/>
+            <Button Content="Backup" Command="{Binding Backup}"/>
+            <Button Content="Restore" Command="{Binding Restore}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"/>
+        </StackPanel>
+        <DataGrid Items="{Binding GameList}" AutoGenerateColumns="False" Height="200">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding ID}" Width="50"/>
+                <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="150"/>
+                <DataGridTextColumn Header="TitleID" Binding="{Binding TitleID}" Width="150"/>
+                <DataGridTextColumn Header="LocalPath" Binding="{Binding LocalPath}" Width="250"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </StackPanel>
+</UserControl>

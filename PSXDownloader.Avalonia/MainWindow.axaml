@@ -1,0 +1,21 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:PSXDownloader.MVVM.ViewModels;assembly=PSXDownloader.Avalonia"
+        xmlns:view="clr-namespace:PSXDownloader.Avalonia.Views"
+        x:Class="PSXDownloader.Avalonia.MainWindow"
+        Width="800" Height="450" Title="PSXDownloader">
+    <Window.DataContext>
+        <vm:MainWindowViewModel/>
+    </Window.DataContext>
+    <TabControl>
+        <TabItem Header="Connect">
+            <view:ConnectView/>
+        </TabItem>
+        <TabItem Header="Setting">
+            <view:SettingView/>
+        </TabItem>
+        <TabItem Header="Database">
+            <view:PSXView/>
+        </TabItem>
+    </TabControl>
+</Window>

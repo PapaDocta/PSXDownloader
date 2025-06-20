@@ -1,21 +1,17 @@
 ﻿using PSXDLL;
 using System.IO;
 using System.Text.Json;
-using WinForm = System.Windows.Forms;
+using Avalonia.Controls;
+using System.Threading.Tasks;
 
 namespace PSXDownloader.MVVM.Data
 {
     public class SettingRepository
     {
-        public string? LocalFilePath()
+        public async Task<string?> LocalFilePathAsync(Window parent)
         {
-            string? path = null;
-            WinForm.FolderBrowserDialog fbd = new();
-            if (fbd.ShowDialog() == WinForm.DialogResult.OK)
-            {
-                path = fbd.SelectedPath;
-            }
-            return path;
+            var dialog = new OpenFolderDialog();
+            return await dialog.ShowAsync(parent);
         }
 
         public void SaveSetting(AppConfig? config)

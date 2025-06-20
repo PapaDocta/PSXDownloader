@@ -1,6 +1,10 @@
 # PSXDownloader
 A Simple Program that use PSXDownloaderHelper Source Code with new Design for transfer Data from PC to PS4, PS5 For Those Have Console With Latest FW and PSN Account
 
+## Cross Platform UI
+The original WPF interface has been replaced with an Avalonia based UI so the
+application can run on Windows, Linux and macOS.
+
 ~I am testing new build of my program and finally it's work but before i publish it i have to test it to be sure that there is no bug in program. so wait for new release of my program.~
 
 # I don't know about licence so this is my own licence

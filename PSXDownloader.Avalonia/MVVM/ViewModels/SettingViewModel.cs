@@ -4,6 +4,7 @@ using PSXDownloader.MVVM.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Avalonia.Controls;
 using System.Windows.Input;
 
 namespace PSXDownloader.MVVM.ViewModels
@@ -74,12 +75,15 @@ namespace PSXDownloader.MVVM.ViewModels
             }
         }
 
-        private void FilePathCommand(object? obj)
+        private async void FilePathCommand(object? obj)
         {
-            string? path = _repository.LocalFilePath();
-            if (path?.Length > 0)
+            if (obj is Window parent)
             {
-                LocalFileDirectory = path;
+                string? path = await _repository.LocalFilePathAsync(parent);
+                if (!string.IsNullOrEmpty(path))
+                {
+                    LocalFileDirectory = path;
+                }
             }
         }
 

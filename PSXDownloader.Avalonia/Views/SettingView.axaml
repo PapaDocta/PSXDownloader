@@ -1,0 +1,18 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:PSXDownloader.MVVM.ViewModels;assembly=PSXDownloader.Avalonia"
+             x:Class="PSXDownloader.Avalonia.Views.SettingView">
+    <UserControl.DataContext>
+        <vm:SettingViewModel/>
+    </UserControl.DataContext>
+    <StackPanel Margin="10" Spacing="5">
+        <CheckBox Content="AutoFind" IsChecked="{Binding IsAutoFind}"/>
+        <ComboBox Items="{Binding BufferList}" SelectedValue="{Binding BufferSize}" DisplayMemberPath="Value" SelectedValuePath="Key" Width="150"/>
+        <TextBox Text="{Binding Rule}" Width="200"/>
+        <StackPanel Orientation="Horizontal" Spacing="5">
+            <Button Content="Folder" Command="{Binding FilePath}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"/>
+            <TextBox Text="{Binding LocalFileDirectory}" Width="200"/>
+        </StackPanel>
+        <Button Content="Save" Command="{Binding SaveSetting}"/>
+    </StackPanel>
+</UserControl>

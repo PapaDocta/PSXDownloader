@@ -1,5 +1,7 @@
 ﻿using PSXDownloader.MVVM.Commands;
-using System.Windows;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using System.Windows.Input;
 
 namespace PSXDownloader.MVVM.ViewModels
@@ -11,8 +13,8 @@ namespace PSXDownloader.MVVM.ViewModels
         private ICommand? _minimize;
         private WindowState _windowState;
 
-        public double MaxWidth => SystemParameters.WorkArea.Width;
-        public double MaxHeight => SystemParameters.WorkArea.Height;
+        public double MaxWidth => 1024;
+        public double MaxHeight => 768;
 
         public WindowState WindowState
         {
@@ -35,7 +37,10 @@ namespace PSXDownloader.MVVM.ViewModels
 
         private void ExitCommand(object? obj)
         {
-            Application.Current.Shutdown();
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime lifetime)
+            {
+                lifetime.Shutdown();
+            }
         }
 
         public ICommand? Maximize
