@@ -19,7 +19,8 @@ namespace PSXDownloader.MVVM.Models
             {
                 Directory.CreateDirectory("Database");
             }
-            optionsBuilder.UseSqlite(@"Data Source=Database\\PSXDatabase.db");
+            string dbPath = Path.Combine("Database", "PSXDatabase.db");
+            optionsBuilder.UseSqlite($"Data Source={dbPath}");
         }
     }
 }

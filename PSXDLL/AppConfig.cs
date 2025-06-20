@@ -1,4 +1,7 @@
-﻿namespace PSXDLL
+﻿using System;
+using System.IO;
+
+namespace PSXDLL
 {
     public class AppConfig
     {
@@ -35,7 +38,8 @@
         /// <summary>
         /// Local replacement directory
         /// </summary>
-        public string? LocalFileDirectory { get; set; } = "D:\\PSXDownloader";
+        public string? LocalFileDirectory { get; set; } =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "PSXDownloader");
 
         /// <summary>
         /// Size of Buffer for Transfer Data

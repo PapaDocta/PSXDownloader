@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 
 namespace PSXDLL
 {
@@ -40,7 +41,7 @@ namespace PSXDLL
                 string filename = GetUrlFileName(psnurl);
                 if (!string.IsNullOrEmpty(filename))
                 {
-                    return AppConfig.Instance().LocalFileDirectory + "\\" + filename;
+                    return Path.Combine(AppConfig.Instance().LocalFileDirectory ?? string.Empty, filename);
                 }
 
                 return string.Empty;

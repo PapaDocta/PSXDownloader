@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
-using WinForm = System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace PSXDownloader.MVVM.Data
 {
@@ -106,22 +106,34 @@ namespace PSXDownloader.MVVM.Data
 
         public string? LocalFilePath()
         {
-            string? path = null;
-            WinForm.FolderBrowserDialog fbd = new();
-            if (fbd.ShowDialog() == WinForm.DialogResult.OK)
+            OpenFileDialog ofd = new()
             {
-                path = fbd.SelectedPath;
+                CheckFileExists = false,
+                CheckPathExists = true,
+                FileName = "Select Folder"
+            };
+
+            bool? result = ofd.ShowDialog();
+            if (result == true)
+            {
+                return Path.GetDirectoryName(ofd.FileName);
             }
-            return path;
+            return null;
         }
 
         public async Task<PSXDatabase?> SingleAdd()
         {
             string? path = null;
-            WinForm.FolderBrowserDialog fbd = new();
-            if (fbd.ShowDialog() == WinForm.DialogResult.OK)
+            OpenFileDialog ofd = new()
             {
-                path = fbd.SelectedPath;
+                CheckFileExists = false,
+                CheckPathExists = true,
+                FileName = "Select Folder"
+            };
+            bool? result = ofd.ShowDialog();
+            if (result == true)
+            {
+                path = Path.GetDirectoryName(ofd.FileName);
             }
 
             if (!string.IsNullOrEmpty(path))
@@ -167,7 +179,7 @@ namespace PSXDownloader.MVVM.Data
                 JsonSerializerOptions? options = new() { WriteIndented = true };
                 string? json = JsonSerializer.Serialize(entities, options);
                 string time = TimeOnly.FromDateTime(DateTime.Now).ToString().Replace(":", "-");
-                string backup = $"Backup\\{time}.json";
+                string backup = Path.Combine("Backup", $"{time}.json");
                 using StreamWriter sw = new(backup);
                 sw.WriteLine(json);
                 MessageBox.Show("Done");
@@ -184,12 +196,13 @@ namespace PSXDownloader.MVVM.Data
             {
                 Directory.CreateDirectory("Backup");
             }
-            WinForm.OpenFileDialog ofd = new()
+            OpenFileDialog ofd = new()
             {
                 Filter = "Json files (*.*)|*.json",
-                InitialDirectory = "Backup\\Game",
+                InitialDirectory = Path.Combine("Backup", "Game"),
             };
-            if (ofd.ShowDialog() == WinForm.DialogResult.OK)
+            bool? res = ofd.ShowDialog();
+            if (res == true)
             {
                 string? json = File.ReadAllText(ofd.FileName);
                 try

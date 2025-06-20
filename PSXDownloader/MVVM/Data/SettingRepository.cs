@@ -1,7 +1,7 @@
 ﻿using PSXDLL;
 using System.IO;
 using System.Text.Json;
-using WinForm = System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace PSXDownloader.MVVM.Data
 {
@@ -9,13 +9,19 @@ namespace PSXDownloader.MVVM.Data
     {
         public string? LocalFilePath()
         {
-            string? path = null;
-            WinForm.FolderBrowserDialog fbd = new();
-            if (fbd.ShowDialog() == WinForm.DialogResult.OK)
+            OpenFileDialog ofd = new()
             {
-                path = fbd.SelectedPath;
+                CheckFileExists = false,
+                CheckPathExists = true,
+                FileName = "Select Folder"
+            };
+
+            bool? result = ofd.ShowDialog();
+            if (result == true)
+            {
+                return Path.GetDirectoryName(ofd.FileName);
             }
-            return path;
+            return null;
         }
 
         public void SaveSetting(AppConfig? config)
@@ -25,7 +31,7 @@ namespace PSXDownloader.MVVM.Data
                 Directory.CreateDirectory("Settings");
             }
 
-            string? fileName = "Settings\\Settings.json";
+            string fileName = Path.Combine("Settings", "Settings.json");
             JsonSerializerOptions? options = new() { WriteIndented = true };
             string jsonString = JsonSerializer.Serialize(config, options);
             File.WriteAllText(fileName, jsonString);
@@ -33,7 +39,7 @@ namespace PSXDownloader.MVVM.Data
 
         public void LoadSetting(AppConfig? config)
         {
-            string? fileName = "Settings\\Settings.json";
+            string fileName = Path.Combine("Settings", "Settings.json");
             if (!File.Exists(fileName))
             {
                 SaveSetting(config);
