@@ -34,12 +34,12 @@ namespace PSXDLL
 
         public string? RequestedUrl { get; set; }
 
-        private void QueryHandle(string query)
+        private async Task QueryHandleAsync(string query)
         {
             HeaderFields = ParseQuery(query);
             if ((HeaderFields == null) || !HeaderFields.ContainsKey("Host"))
             {
-                SendBadRequest();
+                await SendBadRequestAsync();
             }
             else
             {
@@ -89,9 +89,9 @@ namespace PSXDLL
                 _uinfo.PsnUrl = string.IsNullOrEmpty(_uinfo.PsnUrl) ? RequestedUrl : _uinfo.PsnUrl;//psnurl assignment
                 if (!HttpRequestType.ToUpper().Equals("CONNECT") && localFile != string.Empty && File.Exists(localFile))
                 {
-                    _uinfo.ReplacePath = localFile;
-                    _updataUrlLog(_uinfo);
-                    SendLocalFile(localFile, HeaderFields.ContainsKey("Range") ? HeaderFields["Range"] : null, HeaderFields.ContainsKey("Proxy-Connection") ? HeaderFields["Proxy-Connection"] : null);
+                _uinfo.ReplacePath = localFile;
+                _updataUrlLog(_uinfo);
+                await SendLocalFileAsync(localFile, HeaderFields.ContainsKey("Range") ? HeaderFields["Range"] : null, HeaderFields.ContainsKey("Proxy-Connection") ? HeaderFields["Proxy-Connection"] : null);
                 }
                 else
                 {
@@ -105,16 +105,19 @@ namespace PSXDLL
                         {
                             DestinationSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, 1);
                         }
-                        DestinationSocket.BeginConnect(remoteEp, OnConnected, DestinationSocket);
+                        await DestinationSocket.ConnectAsync(remoteEp);
 
                         //add to main panel
                         _uinfo.Host = hostIp.ToString();
                         _uinfo.ReplacePath = string.Empty;
                         _updataUrlLog(_uinfo);
+
+                        await OnConnectedAsync();
                     }
-                    catch
+                    catch(Exception ex)
                     {
-                        SendBadRequest();
+                        Logger.LogError(ex, "QueryHandleAsync");
+                        await SendBadRequestAsync();
                     }
                 }
             }
@@ -195,19 +198,38 @@ namespace PSXDLL
             return str;
         }
 
-        private void SendLocalFile(string? localFile, string? requestRange, string? connection)
+        private async Task SendLocalFileAsync(string? localFile, string? requestRange, string? connection)
         {
             _mLocalFile = new LocalFile(localFile!);
             string responseStr = BuildResponse(requestRange!, connection!, out long startRange);
             _mLocalFile.FileStream!.Seek(startRange, SeekOrigin.Begin);
             try
             {
-                ClientSocket?.BeginSend(Encoding.ASCII.GetBytes(responseStr), 0, responseStr.Length, SocketFlags.None, OnLocalFileSent, ClientSocket);
+                if (ClientSocket != null)
+                {
+                    await ClientSocket.SendAsync(Encoding.ASCII.GetBytes(responseStr), SocketFlags.None);
+                    await StreamFileAsync(ClientSocket);
+                }
             }
-            catch
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "SendLocalFileAsync");
+            }
+            finally
             {
                 _mLocalFile.FileStream.Close();
                 Dispose();
+            }
+        }
+
+        private async Task StreamFileAsync(Socket socket)
+        {
+            int bufferSize = AppConfig.Instance().BufferSize * 1024;
+            byte[] buffer = new byte[bufferSize];
+            int bytesRead;
+            while ((bytesRead = await _mLocalFile.FileStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            {
+                await socket.SendAsync(buffer.AsMemory(0, bytesRead), SocketFlags.None);
             }
         }
 
@@ -263,7 +285,7 @@ namespace PSXDLL
             return responseStr;
         }
 
-        private void SendBadRequest()
+        private async Task SendBadRequestAsync()
         {
             const string s =
                 "HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Type: text/html\r\n\r\nBad Request";
@@ -271,10 +293,14 @@ namespace PSXDLL
             {
                 if (ClientSocket != null)
                 {
-                    ClientSocket.BeginSend(Encoding.ASCII.GetBytes(s), 0, s.Length, SocketFlags.None, OnErrorSent, ClientSocket);
+                    await ClientSocket.SendAsync(Encoding.ASCII.GetBytes(s), SocketFlags.None);
                 }
             }
-            catch
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "SendBadRequestAsync");
+            }
+            finally
             {
                 Dispose();
             }
@@ -291,68 +317,39 @@ namespace PSXDLL
             return !HttpRequestType!.ToUpper().Equals("POST") || !HeaderFields.ContainsKey("Content-Length");
         }
 
-        private void OnQuerySent(IAsyncResult ar)
+
+        private async Task ReceiveQueryAsync()
         {
-            try
+            while (true)
             {
-                if (DestinationSocket != null && DestinationSocket.EndSend(ar) == -1)
+                int num;
+                try
+                {
+                    num = await ClientSocket!.ReceiveAsync(Buffer, SocketFlags.None);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "ReceiveQueryAsync");
+                    Dispose();
+                    return;
+                }
+
+                if (num <= 0)
                 {
                     Dispose();
+                    return;
                 }
-                else
-                {
-                    StartRelay();
-                }
-            }
-            catch
-            {
-                Dispose();
-            }
-        }
 
-        private void OnReceiveQuery(IAsyncResult ar)
-        {
-            int num = -1;
-            try
-            {
-                if (ClientSocket != null)
-                {
-                    num = ClientSocket.EndReceive(ar);
-                }
-            }
-            catch
-            {
-                num = -1;
-            }
-            if (num <= 0)
-            {
-                Dispose();
-            }
-            else
-            {
                 HttpQuery += Encoding.ASCII.GetString(Buffer, 0, num);
                 if (IsValidQuery(HttpQuery))
                 {
-                    QueryHandle(HttpQuery);
-                }
-                else
-                {
-                    try
-                    {
-                        if (ClientSocket != null)
-                        {
-                            ClientSocket.BeginReceive(Buffer, 0, Buffer.Length, SocketFlags.None, OnReceiveQuery, ClientSocket);
-                        }
-                    }
-                    catch
-                    {
-                        Dispose();
-                    }
+                    await QueryHandleAsync(HttpQuery);
+                    break;
                 }
             }
         }
 
-        private void OnConnected(IAsyncResult ar)
+        private async Task OnConnectedAsync()
         {
             try
             {
@@ -362,60 +359,29 @@ namespace PSXDLL
                 }
 
                 string str;
-                DestinationSocket.EndConnect(ar);
                 if (HttpRequestType!.ToUpper().Equals("CONNECT"))
                 {
                     if (ClientSocket != null)
                     {
                         str = $"{HttpVersion} 200 Connection established\r\n\r\n";
-                        ClientSocket.BeginSend(Encoding.ASCII.GetBytes(str), 0, str.Length, SocketFlags.None, OnOkSent, ClientSocket);
+                        await ClientSocket.SendAsync(Encoding.ASCII.GetBytes(str), SocketFlags.None);
                     }
                 }
                 else
                 {
                     str = RebuildQuery();
-                    DestinationSocket.BeginSend(Encoding.ASCII.GetBytes(str), 0, str.Length, SocketFlags.None, OnQuerySent, DestinationSocket);
+                    await DestinationSocket.SendAsync(Encoding.ASCII.GetBytes(str), SocketFlags.None);
                 }
+
+                await StartRelayAsync();
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.LogError(ex, "OnConnectedAsync");
                 Dispose();
             }
         }
 
-        private void OnOkSent(IAsyncResult ar)
-        {
-            try
-            {
-                if (ClientSocket != null && ClientSocket.EndSend(ar) == -1)
-                {
-                    Dispose();
-                }
-                else
-                {
-                    StartRelay();
-                }
-            }
-            catch
-            {
-                Dispose();
-            }
-        }
-
-        private void OnErrorSent(IAsyncResult ar)
-        {
-            try
-            {
-                if (ClientSocket != null)
-                {
-                    ClientSocket.EndSend(ar);
-                }
-            }
-            catch
-            {
-                Dispose();
-            }
-        }
 
         //private async void OnLocalFileSent(IAsyncResult ar)
         //{
@@ -443,56 +409,24 @@ namespace PSXDLL
         //    }
         //}
 
-        private void OnLocalFileSent(IAsyncResult ar)
-        {
-            try
-            {
-                Socket socket = (Socket)ar.AsyncState;
-                socket.EndSend(ar);
-                SendLocalFile(socket);
-            }
-            catch
-            {
-                _mLocalFile.FileStream.Close();
-                Dispose();
-            }
-        }
-
-        private async void SendLocalFile(Socket socket)
-        {
-            int bufferSize = AppConfig.Instance().BufferSize * 1024;
-            byte[] buffer = new byte[bufferSize];
-            int bytesRead = await Task.Run(() => _mLocalFile.FileStream.Read(buffer, 0, bufferSize));
-            if (bytesRead > 0)
-            {
-                try
-                {
-                    await Task.Run(() => socket.BeginSend(buffer, 0, bytesRead, SocketFlags.None, OnLocalFileSent, socket));
-                }
-                catch
-                {
-                    _mLocalFile.FileStream.Close();
-                    Dispose();
-                }
-            }
-            else
-            {
-                _mLocalFile.FileStream.Close();
-                Dispose();
-            }
-        }
 
         public override void StartHandshake()
+        {
+            _ = StartHandshakeAsync();
+        }
+
+        private async Task StartHandshakeAsync()
         {
             try
             {
                 if (ClientSocket != null)
                 {
-                    ClientSocket.BeginReceive(Buffer, 0, Buffer.Length, SocketFlags.None, OnReceiveQuery, ClientSocket);
+                    await ReceiveQueryAsync();
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.LogError(ex, "StartHandshakeAsync");
                 Dispose();
             }
         }

@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PSXDownloader", "PSXDownloa
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PSXDLL", "PSXDLL\PSXDLL.csproj", "{38BC08E6-6E6D-4E95-9A63-046BA2D6B721}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PSXDLL.Tests", "PSXDLL.Tests\PSXDLL.Tests.csproj", "{B5B6A990-1F08-4F32-8B67-123456789ABC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,8 +22,12 @@ Global
 		{38BC08E6-6E6D-4E95-9A63-046BA2D6B721}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{38BC08E6-6E6D-4E95-9A63-046BA2D6B721}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{38BC08E6-6E6D-4E95-9A63-046BA2D6B721}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{38BC08E6-6E6D-4E95-9A63-046BA2D6B721}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
+                {38BC08E6-6E6D-4E95-9A63-046BA2D6B721}.Release|Any CPU.Build.0 = Release|Any CPU
+                {B5B6A990-1F08-4F32-8B67-123456789ABC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+                {B5B6A990-1F08-4F32-8B67-123456789ABC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                {B5B6A990-1F08-4F32-8B67-123456789ABC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+                {B5B6A990-1F08-4F32-8B67-123456789ABC}.Release|Any CPU.Build.0 = Release|Any CPU
+        EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection

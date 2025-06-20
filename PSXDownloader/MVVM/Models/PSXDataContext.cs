@@ -12,14 +12,22 @@ namespace PSXDownloader.MVVM.Models
             Database.Migrate();
         }
 
+        public PSXDataContext(DbContextOptions<PSXDataContext> options) : base(options)
+        {
+            Database.Migrate();
+        }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);
-            if (!Directory.Exists("Database"))
+            if (!optionsBuilder.IsConfigured)
             {
-                Directory.CreateDirectory("Database");
+                if (!Directory.Exists("Database"))
+                {
+                    Directory.CreateDirectory("Database");
+                }
+                optionsBuilder.UseSqlite(@"Data Source=Database\\PSXDatabase.db");
             }
-            optionsBuilder.UseSqlite(@"Data Source=Database\\PSXDatabase.db");
         }
     }
 }

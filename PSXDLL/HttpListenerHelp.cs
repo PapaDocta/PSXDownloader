@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace PSXDLL
 {
@@ -26,28 +27,17 @@ namespace PSXDLL
 
         public override string ConstructString => $"Host:{Address};Port:{Port}";
 
-        public override void OnAccept(IAsyncResult ar)
+        public override void OnAccept(Socket clientSocket)
         {
             try
             {
-                Socket? clientSocket = ListenSocket?.EndAccept(ar);
-                if (clientSocket != null)
-                {
-                    HttpClient client = new(clientSocket, RemoveClient, UpdataUrlLog!);
-                    AddClient(client);
-                    client.StartHandshake();
-                }
+                HttpClient client = new(clientSocket, RemoveClient, UpdataUrlLog!);
+                AddClient(client);
+                client.StartHandshake();
             }
-            catch
+            catch (Exception ex)
             {
-            }
-            try
-            {
-                ListenSocket?.BeginAccept(OnAccept, ListenSocket);
-            }
-            catch
-            {
-                Dispose();
+                Logger.LogError(ex, "OnAccept");
             }
         }
 

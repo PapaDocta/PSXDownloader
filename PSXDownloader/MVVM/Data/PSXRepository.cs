@@ -13,6 +13,17 @@ namespace PSXDownloader.MVVM.Data
 {
     public class PSXRepository
     {
+        private readonly DbContextOptions<PSXDataContext> _options;
+
+        public PSXRepository()
+        {
+            _options = new DbContextOptionsBuilder<PSXDataContext>().Options;
+        }
+
+        public PSXRepository(DbContextOptions<PSXDataContext> options)
+        {
+            _options = options;
+        }
         public async Task BulkAdd(string? path)
         {
             if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(path))
@@ -51,42 +62,42 @@ namespace PSXDownloader.MVVM.Data
 
         public async Task Create(PSXDatabase Entity)
         {
-            using PSXDataContext dataContext = new();
+            using PSXDataContext dataContext = new(_options);
             await dataContext.Set<PSXDatabase>().AddAsync(Entity);
             await dataContext.SaveChangesAsync();
         }
 
         public async Task Update(PSXDatabase Entity)
         {
-            using PSXDataContext dataContext = new();
+            using PSXDataContext dataContext = new(_options);
             dataContext.Set<PSXDatabase>().Update(Entity);
             await dataContext.SaveChangesAsync();
         }
 
         public async Task Delete(PSXDatabase Entity)
         {
-            using PSXDataContext dataContext = new();
+            using PSXDataContext dataContext = new(_options);
             dataContext.Set<PSXDatabase>().Remove(Entity);
             await dataContext.SaveChangesAsync();
         }
 
         public async Task<List<PSXDatabase>> GetAll()
         {
-            using PSXDataContext dataContext = new();
+            using PSXDataContext dataContext = new(_options);
             List<PSXDatabase> entities = await dataContext.Set<PSXDatabase>().ToListAsync();
             return await Task.FromResult(entities);
         }
 
         public bool IsExist(string? titleID)
         {
-            using PSXDataContext dataContext = new();
+            using PSXDataContext dataContext = new(_options);
             PSXDatabase? local = dataContext.Set<PSXDatabase>().FirstOrDefault(s => s.TitleID == titleID);
             return local != null;
         }
 
         public async Task<string> GetLocalPath(string? titleID)
         {
-            using PSXDataContext dataContext = new();
+            using PSXDataContext dataContext = new(_options);
             PSXDatabase? local = dataContext.Set<PSXDatabase>().FirstOrDefault(s => s.TitleID == titleID);
             if (local != null)
             {
@@ -162,7 +173,7 @@ namespace PSXDownloader.MVVM.Data
                 {
                     Directory.CreateDirectory("Backup");
                 }
-                using PSXDataContext dataContext = new();
+                using PSXDataContext dataContext = new(_options);
                 List<PSXDatabase> entities = await dataContext.Set<PSXDatabase>().ToListAsync();
                 JsonSerializerOptions? options = new() { WriteIndented = true };
                 string? json = JsonSerializer.Serialize(entities, options);
