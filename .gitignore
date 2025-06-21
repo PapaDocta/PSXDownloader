@@ -1,0 +1,19 @@
+# .NET build folders
+bin/
+obj/
+
+# User-specific files
+*.user
+
+# Visual Studio
+.vs/
+
+# Build results
+TestResults/
+
+# NuGet packages
+*.nupkg
+packages/
+
+# Rider-specific
+.idea/
