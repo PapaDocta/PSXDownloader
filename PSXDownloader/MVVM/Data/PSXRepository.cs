@@ -26,7 +26,7 @@ namespace PSXDownloader.MVVM.Data
         }
         public async Task BulkAdd(string? path)
         {
-            if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(path))
+            if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
             {
                 return;
             }
